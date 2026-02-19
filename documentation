@@ -1,1 +1,194 @@
-This documentation is for the usage of hack-backend by 0xd0.
+================================================================================
+                        REDFORGE SENTINEL API
+                        Documentation v1.0
+================================================================================
+
+1. OVERVIEW
+--------------------------------------------------------------------------------
+RedForge Sentinel is a pentesting API built to serve test payload files for
+Remote File Inclusion (RFI) testing. It organises payloads by technology
+(PHP, ASP, JSP, Python, Perl, ColdFusion, Shell) and serves them over clean
+RESTful paths — no query parameters.
+
+Every request is logged with full metadata (IP, headers, timing, domain
+detection). The architecture is modular and designed to be extended with new
+attack modules over time.
+
+
+2. SETUP
+--------------------------------------------------------------------------------
+
+  Prerequisites:  Node.js >= 18
+
+  Install:        npm install
+  Dev server:     npm run dev       (uses nodemon for auto-reload)
+  Production:     npm start
+
+  Environment variables (.env):
+
+    PORT        Server port               (default: 3000)
+    NODE_ENV    Environment               (default: development)
+    LOG_LEVEL   Winston log level          (default: debug)
+    DOMAIN      Your domain for subdomain  (default: localhost)
+                detection in logs
+
+
+3. ENDPOINTS
+--------------------------------------------------------------------------------
+
+  3.1  Health Check
+  ─────────────────
+  GET /
+
+  Returns a simple JSON message confirming the API is running.
+
+  Request:   curl http://localhost:3000/
+  Response:  200  { "message": "Let's hack the planet!" }
+
+
+  3.2  Serve RFI Test Payload
+  ────────────────────────────
+  GET /rfi/:technology/:filename
+
+  Serves a test payload file from the files/<technology>/ directory.
+  Everything is specified in the path — no query parameters.
+
+  Path Parameters:
+    :technology   One of: php, asp, jsp, python, perl, coldfusion, shell
+    :filename     Name of the file (must match the technology's extension)
+
+  Supported Extensions:
+    php         →  .php
+    asp         →  .asp, .aspx
+    jsp         →  .jsp
+    python      →  .py
+    perl        →  .pl, .cgi
+    coldfusion  →  .cfm
+    shell       →  .sh
+
+  Request:   curl http://localhost:3000/rfi/php/info.php
+  Response:  200  (file content streamed with Content-Type: text/x-php)
+
+  Error Responses:
+    400  Invalid technology / filename / extension
+    404  File not found in the directory
+
+
+  3.3  Live Log Stream
+  ────────────────────
+  GET /logs/stream
+
+  Provides a real-time stream of all server logs using Server-Sent Events (SSE).
+  Any log entry written to the files will also be pushed to connected clients.
+
+  Request:   curl -N http://localhost:3000/logs/stream
+  Response:  200  (continuous stream of 'data: {json_log}' lines)
+
+
+4. FILE PAYLOADS
+--------------------------------------------------------------------------------
+Test payload files live under the files/ directory, organised by technology:
+
+    files/
+    ├── php/           .php files
+    ├── asp/           .asp, .aspx files
+    ├── jsp/           .jsp files
+    ├── python/        .py files
+    ├── perl/          .pl, .cgi files
+    ├── coldfusion/    .cfm files
+    └── shell/         .sh files
+
+  Adding a new payload:
+    1. Place the file in the correct technology directory
+    2. Ensure the file extension matches the technology
+    3. Access it at  GET /rfi/<technology>/<filename>
+
+  Adding a new technology:
+    1. Add the technology and its extensions to TECH_MAP in utils/file_registry.js
+    2. Add a content-type entry in CONTENT_TYPES in controllers/rfi.controller.js
+    3. Create the directory under files/
+    4. Drop in your payload files
+
+
+5. LOGGING
+--------------------------------------------------------------------------------
+All requests are logged automatically with full metadata.
+
+  Log files (under logs/ directory):
+    combined.log   All log entries (rotated at 5 MB, 5 files kept)
+    error.log      Error-level entries only (rotated at 5 MB, 3 files kept)
+
+  Each log entry includes:
+    - Timestamp
+    - HTTP method and full URL
+    - Client IP address
+    - Host, Origin, Referer, User-Agent headers
+    - Subdomain detection (if domain is configured)
+    - Fragment detection (from Referer header)
+    - Request body preview (capped at 1 KB)
+    - Response status code and latency in ms
+
+  Configuring log level:
+    Set LOG_LEVEL in .env to one of: error, warn, info, http, verbose, debug, silly
+
+  Using the logger in new modules:
+    import { createChildLogger } from "../utils/logger.js";
+    const log = createChildLogger("my_module");
+    log.info("Something happened", { key: "value" });
+
+
+6. SECURITY
+--------------------------------------------------------------------------------
+  - Helmet:          Sets secure HTTP headers automatically
+  - Input validation: Path parameters are validated against traversal, LFI, RFI,
+                      null bytes, hidden files, and extension mismatches
+  - Path sandboxing:  Resolved file paths are verified to stay within files/
+  - Rate limiting:    IP-based rate limiting middleware available (ip_rate_limit)
+  - CORS:            Enabled via cors middleware
+  - Error handling:   Global error handler catches unhandled errors, returns safe
+                      responses, and logs stack traces
+
+
+7. PROJECT STRUCTURE
+--------------------------------------------------------------------------------
+
+    RedForge/
+    ├── server.js                   Entry point
+    ├── package.json
+    ├── .env                        Environment config
+    │
+    ├── controllers/
+    │   ├── normal.controller.js    Health check handler
+    │   ├── rfi.controller.js       RFI file serving handler
+    │   └── logs.controller.js      Real-time log stream handler
+    │
+    ├── routes/
+    │   ├── normal.route.js         Health check route
+    │   ├── rfi.route.js            RFI route
+    │   └── logs.route.js           Real-time log stream route
+    │
+    ├── middleware/
+    │   ├── ip_rate_limit.js        Rate limiting
+    │   ├── request_logger.js       Global request logging
+    │   ├── validate_path.js        Path validation & security
+    │   └── error_handler.js        404 & global error handler
+    │
+    ├── utils/
+    │   ├── env.js                  Environment variables
+    │   ├── logger.js               Winston logger factory
+    │   └── file_registry.js        Technology/file registry
+    │
+    ├── files/                      RFI test payloads (by technology)
+    │   ├── php/
+    │   ├── asp/
+    │   ├── jsp/
+    │   ├── python/
+    │   ├── perl/
+    │   ├── coldfusion/
+    │   └── shell/
+    │
+    └── logs/                       Log output files
+
+================================================================================
+                        Author: 0xd0
+================================================================================
