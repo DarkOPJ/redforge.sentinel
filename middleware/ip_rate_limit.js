@@ -8,4 +8,12 @@ const ip_rate_limit = rateLimit({
   message: { message: "Too many attempts. Please try again later." },
 });
 
-export { ip_rate_limit };
+const health_check_limit = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  limit: 3, // Max 3 requests
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many health checks. Please try again later." },
+});
+
+export { ip_rate_limit, health_check_limit };

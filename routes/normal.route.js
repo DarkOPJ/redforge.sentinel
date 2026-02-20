@@ -1,8 +1,8 @@
 import express from "express";
-import { file_handler } from "../controllers/normal.controller.js";
+import { get_home } from "../controllers/normal.controller.js";
 
 const router = express.Router();
 
-router.get("", file_handler);
+router.get("", get_home);
 
 export default router;

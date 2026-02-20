@@ -10,6 +10,7 @@ import {
   not_found_handler,
   global_error_handler,
 } from "./middleware/error_handler.js";
+import { health_check_limit } from "./middleware/ip_rate_limit.js";
 
 // Route imports
 import normal_router from "./routes/normal.route.js";
@@ -24,6 +25,11 @@ app.use(helmet()); // Security headers
 app.use(cors()); // CORS
 app.use(express.json()); // Parse JSON bodies
 app.set("trust proxy", 1); // Correct IP behind proxies
+
+// Health check not logged
+app.use("/healthz", health_check_limit, (req, res) => res.send("OK"));
+
+// Request logger
 app.use(request_logger); // Log every request
 
 // ── Routes ───────────────────────────────────────────────────────────
