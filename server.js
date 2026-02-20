@@ -26,8 +26,11 @@ app.use(cors()); // CORS
 app.use(express.json()); // Parse JSON bodies
 app.set("trust proxy", 1); // Correct IP behind proxies
 
-// Health check not logged
-app.use("/healthz", health_check_limit, (req, res) => res.send("OK"));
+// Health check and favicon not logged
+app.use("/healthz", health_check_limit, (req, res) =>
+  res.status(200).send("OK"),
+);
+app.get("/favicon.ico", (req, res) => res.status(204).end());
 
 // Request logger
 app.use(request_logger); // Log every request
