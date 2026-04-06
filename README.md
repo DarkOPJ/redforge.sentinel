@@ -1,11 +1,11 @@
-# 🔥 REDFORGE SENTINEL API  
+# 🔥 CORSe API  
 ### Documentation v1.0
 
 ---
 
 ## 1. Overview
 
-**RedForge Sentinel** is a pentesting API built to serve controlled test payload files for **Remote File Inclusion (RFI)** testing.
+**CORSe** is a pentesting API built to serve controlled test payload files for **Remote File Inclusion (RFI)**, **Out-of-Band** testing, logging captured requests and more.
 
 Payloads are organised by technology:
 
@@ -269,7 +269,7 @@ log.info("Something happened", { key: "value" });
 
 ## 6. Security
 
-RedForge Sentinel includes:
+CORSe  includes:
 
 - Helmet for secure HTTP headers  
 - Strict path parameter validation against:
@@ -288,7 +288,7 @@ RedForge Sentinel includes:
 ## 7. Project Structure
 
 ```
-RedForge/
+CORSe/
 ├── server.js
 ├── package.json
 ├── .env
